@@ -1,28 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServerClient } from '@/utils/supabase-server';
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  
-  // Create Supabase client
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  // Bypass auth when Supabase is not configured
+  if (!supabaseUrl || !supabaseAnonKey) {
+    if (path === '/') {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+    return NextResponse.next();
+  }
+
+  // Supabase auth flow
+  const { createSupabaseServerClient } = await import('@/utils/supabase-server');
   const { supabase, response } = createSupabaseServerClient(request);
-  
-  // Get the session
   const { data: { session } } = await supabase.auth.getSession();
 
-  // Define protected and public paths
   const isAuthRoute = path === '/';
   const isProtectedRoute = path !== '/';
 
-  // If on login page and authenticated, redirect to dashboard
   if (isAuthRoute && session) {
     const redirectResponse = NextResponse.redirect(new URL('/dashboard', request.url));
-    // Set a header to indicate fresh login for client-side handling
     redirectResponse.headers.set('x-auth-redirect', 'true');
     return redirectResponse;
   }
 
-  // If trying to access protected route without session, redirect to login
   if (isProtectedRoute && !session) {
     return NextResponse.redirect(new URL('/', request.url));
   }

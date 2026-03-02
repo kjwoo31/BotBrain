@@ -1,8 +1,17 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { isMockMode } from '@/utils/mock/mock-supabase-client'
 
 export async function POST(request: Request) {
+  if (isMockMode()) {
+    return NextResponse.json({
+      user: { id: 'mock-user-00000000-0000-0000-0000-000000000001', email: 'demo@botbrain.local' },
+      session: { access_token: 'mock-token' },
+      success: true,
+    });
+  }
+
   const { email, password, remember } = await request.json()
 
   const cookieStore = await cookies()

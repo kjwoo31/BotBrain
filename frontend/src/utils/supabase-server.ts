@@ -2,9 +2,17 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { Database } from '@/types/database.types'
+import { isMockMode, createMockSupabaseClient } from '@/utils/mock/mock-supabase-client'
 
 // For middleware - needs cookie handling
 export function createSupabaseServerClient(request: NextRequest) {
+  if (isMockMode()) {
+    return {
+      supabase: createMockSupabaseClient() as any,
+      response: NextResponse.next({ request: { headers: request.headers } }),
+    };
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -71,6 +79,8 @@ export function createSupabaseServerClient(request: NextRequest) {
 
 // For API routes - simple client without cookie handling
 export function createSupabaseApiClient() {
+  if (isMockMode()) return createMockSupabaseClient() as any;
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 

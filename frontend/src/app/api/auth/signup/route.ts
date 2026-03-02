@@ -1,8 +1,12 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { isMockMode } from '@/utils/mock/mock-supabase-client'
 
 export async function POST(request: Request) {
+  if (isMockMode()) {
+    return NextResponse.json({ success: true, message: 'Mock mode - no signup needed' });
+  }
   const { email, password, name } = await request.json()
 
   // Server-side validation
